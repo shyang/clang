@@ -516,7 +516,7 @@ unsigned ContinuationIndenter::addTokenOnNewLine(LineState &State,
     State.Stack.back().BreakBeforeParameter = false;
   if (NextNonComment->is(tok::question) ||
       (PreviousNonComment && PreviousNonComment->is(tok::question)))
-    State.Stack.back().BreakBeforeParameter = true;
+    State.Stack.back().BreakBeforeParameter = false;
   if (Current.is(TT_BinaryOperator) && Current.CanBreakBefore)
     State.Stack.back().BreakBeforeParameter = false;
 
@@ -547,7 +547,7 @@ unsigned ContinuationIndenter::addTokenOnNewLine(LineState &State,
       State.Stack[State.Stack.size() - 2].NestedBlockInlined;
   if (!NestedBlockSpecialCase)
     for (unsigned i = 0, e = State.Stack.size() - 1; i != e; ++i)
-      State.Stack[i].BreakBeforeParameter = true;
+      State.Stack[i].BreakBeforeParameter = false;
 
   if (PreviousNonComment &&
       !PreviousNonComment->isOneOf(tok::comma, tok::semi) &&
@@ -557,7 +557,7 @@ unsigned ContinuationIndenter::addTokenOnNewLine(LineState &State,
           TT_BinaryOperator, TT_FunctionAnnotationRParen, TT_JavaAnnotation,
           TT_LeadingJavaAnnotation) &&
       Current.isNot(TT_BinaryOperator) && !PreviousNonComment->opensScope())
-    State.Stack.back().BreakBeforeParameter = true;
+    State.Stack.back().BreakBeforeParameter = false;
 
   // If we break after { or the [ of an array initializer, we should also break
   // before the corresponding } or ].
@@ -573,7 +573,7 @@ unsigned ContinuationIndenter::addTokenOnNewLine(LineState &State,
         (!Style.AllowAllParametersOfDeclarationOnNextLine &&
          State.Line->MustBeDeclaration) ||
         Previous.is(TT_DictLiteral))
-      State.Stack.back().BreakBeforeParameter = true;
+      State.Stack.back().BreakBeforeParameter = false;
   }
 
   return Penalty;
@@ -965,7 +965,7 @@ void ContinuationIndenter::moveStatePastScopeOpener(LineState &State,
         // into one line and put one per line if they don't.
         if (getLengthToMatchingParen(Current) + State.Column >
             getColumnLimit(State))
-          BreakBeforeParameter = true;
+          BreakBeforeParameter = false;
       } else {
         // For ColumnLimit = 0, we have to figure out whether there is or has to
         // be a line break within this call.
@@ -973,7 +973,7 @@ void ContinuationIndenter::moveStatePastScopeOpener(LineState &State,
              Tok && Tok != Current.MatchingParen; Tok = Tok->Next) {
           if (Tok->MustBreakBefore ||
               (Tok->CanBreakBefore && Tok->NewlinesBefore > 0)) {
-            BreakBeforeParameter = true;
+            BreakBeforeParameter = false;
             break;
           }
         }
@@ -1029,14 +1029,14 @@ void ContinuationIndenter::moveStateToNewBlock(LineState &State) {
       State.Stack.back().LastSpace, /*AvoidBinPacking=*/true,
       /*NoLineBreak=*/false));
   State.Stack.back().NestedBlockIndent = NestedBlockIndent;
-  State.Stack.back().BreakBeforeParameter = true;
+  State.Stack.back().BreakBeforeParameter = false;
 }
 
 unsigned ContinuationIndenter::addMultilineToken(const FormatToken &Current,
                                                  LineState &State) {
   // Break before further function parameters on all levels.
   for (unsigned i = 0, e = State.Stack.size(); i != e; ++i)
-    State.Stack[i].BreakBeforeParameter = true;
+    State.Stack[i].BreakBeforeParameter = false;
 
   unsigned ColumnsUsed = State.Column;
   // We can only affect layout of the first and the last line, so the penalty
@@ -1199,7 +1199,7 @@ unsigned ContinuationIndenter::breakProtrudingToken(const FormatToken &Current,
     // visible. Line comments already introduce a break.
     if (Current.isNot(TT_LineComment)) {
       for (unsigned i = 0, e = State.Stack.size(); i != e; ++i)
-        State.Stack[i].BreakBeforeParameter = true;
+        State.Stack[i].BreakBeforeParameter = false;
     }
 
     Penalty += Current.isStringLiteral() ? Style.PenaltyBreakString
